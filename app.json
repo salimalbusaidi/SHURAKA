@@ -1,0 +1,86 @@
+{
+  "expo": {
+    "name": "شركاء",
+    "slug": "shuraka-loyalty",
+    "version": "1.0.0",
+    "runtimeVersion": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/images/icon.png",
+    "scheme": "shuraka",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "locales": {
+      "ar": "./assets/locales/ar.json"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shuraka.loyalty",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "يستخدم التطبيق الكاميرا لمسح رموز QR الخاصة بعملائك.",
+        "NSPhotoLibraryUsageDescription": "يستخدم التطبيق معرض الصور لرفع شعار نشاطك التجاري.",
+        "CFBundleAllowMixedLocalizations": true
+      }
+    },
+    "android": {
+      "package": "com.shuraka.loyalty",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#0D1F3C"
+      },
+      "edgeToEdgeEnabled": true,
+      "allowBackup": false,
+      "softwareKeyboardLayoutMode": "pan",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/icon.png",
+      "name": "شركاء - منصة الولاء الذكية",
+      "shortName": "شركاء",
+      "lang": "ar",
+      "dir": "rtl",
+      "description": "منصة الولاء الرقمية لأصحاب الأعمال في الخليج - إدارة العملاء والمحافظ الذكية",
+      "themeColor": "#0D1F3C",
+      "backgroundColor": "#0D1F3C"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0D1F3C"
+        }
+      ],
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "يستخدم تطبيق شركاء الكاميرا لمسح رموز QR الخاصة بعملائك.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "shuraka-loyalty"
+      }
+    }
+  }
+}
