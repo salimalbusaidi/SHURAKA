@@ -175,6 +175,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: translateAuthError(e.message) };
     }
   };
+  
+const resetPassword = async (
+  email: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      email.trim(),
+      {
+        redirectTo: window.location.origin + '/(auth)/login',
+      }
+    );
+
+    if (error) {
+      return {
+        success: false,
+        error: translateAuthError(error.message),
+      };
+    }
+
+    return {
+      success: true,
+    };
+  } catch (e: any) {
+    return {
+      success: false,
+      error: translateAuthError(e.message),
+    };
+  }
+};
 
   const updateUser = (data: Partial<AuthUser>) => {
     if (user) setUser({ ...user, ...data });
