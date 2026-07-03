@@ -10,14 +10,9 @@ export function useAuth() {
     user: ctx.user,
     isAuthenticated: ctx.isAuthenticated,
     isLoading: ctx.isLoading,
-    // OTP methods
-    sendOTP: ctx.sendOTP,
-    verifyOTP: ctx.verifyOTP,
-    // Registration
     register: ctx.register,
-    // Social
-    loginWithGoogle: ctx.loginWithGoogle,
-    // Logout & utils
+    loginWithPassword: ctx.loginWithPassword,
+    resetPassword: ctx.resetPassword,
     logout: ctx.logout,
     updateUser: ctx.updateUser,
   };

@@ -1,4 +1,4 @@
-// Powered by OnSpace.AI - Real Supabase Auth with OTP support
+// Powered by OnSpace.AI - Real Supabase Auth
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { getSupabaseClient } from '@/template';
 
@@ -17,14 +17,10 @@ interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  // OTP Login (primary)
-  sendOTP: (email: string) => Promise<{ success: boolean; error?: string; code?: string }>;
-  verifyOTP: (email: string, token: string) => Promise<{ success: boolean; role?: UserRole; error?: string; code?: string }>;
-  // Registration
   register: (data: RegisterData) => Promise<{ success: boolean; error?: string; needsVerification?: boolean }>;
-  // Logout & utilities
+  loginWithPassword: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   updateUser: (data: Partial<AuthUser>) => void;
 }
 
@@ -111,100 +107,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // ── OTP: Send ──────────────────────────────────────────────────
-  const sendOTP = async (email: string): Promise<{ success: boolean; error?: string; code?: string }> => {
-    try {
-      const trimmedEmail = email.trim().toLowerCase();
-
-      // Call our Edge Function which validates email exists first
-      const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: { email: trimmedEmail },
-      });
-
-      if (error) {
-        // Try to extract detailed error from FunctionsHttpError
-        let errorMessage = 'تعذر إرسال رمز التحقق، حاول مرة أخرى';
-        let code = 'SEND_FAILED';
-        try {
-          const text = await (error as any).context?.text?.();
-          if (text) {
-            const parsed = JSON.parse(text);
-            errorMessage = parsed.error || errorMessage;
-            code = parsed.code || code;
-          }
-        } catch (_) {}
-        return { success: false, error: errorMessage, code };
-      }
-
-      if (data?.error) {
-        return { success: false, error: data.error, code: data.code };
-      }
-
-      return { success: true };
-    } catch (e: any) {
-      return { success: false, error: 'تعذر إرسال رمز التحقق، تحقق من اتصالك بالإنترنت' };
-    }
-  };
-
-  // ── OTP: Verify ────────────────────────────────────────────────
-  const verifyOTP = async (
-    email: string,
-    token: string
-  ): Promise<{ success: boolean; role?: UserRole; error?: string; code?: string }> => {
-    try {
-      const trimmedEmail = email.trim().toLowerCase();
-      const trimmedToken = token.trim();
-
-      // Call our Edge Function for verification
-      const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: { email: trimmedEmail, token: trimmedToken },
-      });
-
-      if (error) {
-        let errorMessage = 'رمز التحقق غير صحيح';
-        let code = 'OTP_INVALID';
-        try {
-          const text = await (error as any).context?.text?.();
-          if (text) {
-            const parsed = JSON.parse(text);
-            errorMessage = parsed.error || errorMessage;
-            code = parsed.code || code;
-          }
-        } catch (_) {}
-        return { success: false, error: errorMessage, code };
-      }
-
-      if (data?.error) {
-        return { success: false, error: data.error, code: data.code };
-      }
-
-      if (data?.session) {
-        // Set the session in Supabase client so auth state updates
-        await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        });
-
-        const role = (data.user?.role as UserRole) || 'business_owner';
-        if (data.user) {
-          setUser({
-            id: data.user.id,
-            name: data.user.name,
-            email: data.user.email,
-            phone: data.user.phone,
-            role,
-            avatar: data.user.avatar,
-          });
-        }
-        return { success: true, role };
-      }
-
-      return { success: false, error: 'حدث خطأ في تسجيل الدخول' };
-    } catch (e: any) {
-      return { success: false, error: 'تعذر التحقق من الرمز، تحقق من اتصالك بالإنترنت' };
-    }
-  };
-
   // ── Register ───────────────────────────────────────────────────
   const register = async (data: RegisterData): Promise<{ success: boolean; error?: string; needsVerification?: boolean }> => {
     try {
@@ -252,15 +154,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  // ── Google OAuth ───────────────────────────────────────────────
-  const loginWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+  const loginWithPassword = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: 'shuraka://auth/callback' },
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
       });
-      if (error) return { success: false, error: translateAuthError(error.message) };
-      return { success: true };
+
+      if (error) {
+        return { success: false, error: translateAuthError(error.message) };
+      }
+
+      if (data.user) {
+        await loadUserProfile(data.user.id, data.user.email || email.trim());
+        return { success: true };
+      }
+
+      return { success: false, error: 'تعذر تسجيل الدخول، حاول مرة أخرى.' };
     } catch (e: any) {
       return { success: false, error: translateAuthError(e.message) };
     }
@@ -275,11 +185,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isAuthenticated: !!user,
       isLoading,
-      sendOTP,
-      verifyOTP,
       register,
+      loginWithPassword,
+      resetPassword,
       logout,
-      loginWithGoogle,
       updateUser,
     }}>
       {children}
